@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MultaCheck — Istruzioni per Claude Code / Cursor</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root{--bg:#111318;--card:#1a1c24;--card2:#22252e;--lime:#c8e64a;--lime-dim:#8ba832;--white:#f0f0f0;--gray:#7a7f8d;--gray-l:#b0b5c0;--green:#10b981;--red:#ef4444;--amber:#f59e0b;--teal:#2dd4bf;--border:#2a2d38;--purple:#a78bfa}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--white);line-height:1.6}
+.wrap{max-width:960px;margin:0 auto;padding:40px 48px 80px}
+.mono{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:2px;font-size:.72em;color:var(--lime-dim)}
+
+/* PROMPT BLOCK — il componente principale */
+.prompt-block{position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;margin:16px 0 30px;overflow:hidden}
+.prompt-block.primary{border-color:rgba(200,230,74,.4)}
+.prompt-block .pb-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card2);border-bottom:1px solid var(--border)}
+.prompt-block .pb-label{font-family:'JetBrains Mono',monospace;font-size:.7em;color:var(--lime);text-transform:uppercase;letter-spacing:1px}
+.prompt-block .pb-tag{font-size:.68em;padding:2px 8px;border-radius:10px;font-family:'JetBrains Mono',monospace}
+.prompt-block .pb-tag.claude{background:rgba(167,139,250,.15);color:var(--purple)}
+.prompt-block .pb-tag.bash{background:rgba(16,185,129,.12);color:var(--green)}
+.prompt-block .pb-tag.sql{background:rgba(245,158,11,.12);color:var(--amber)}
+.prompt-block .pb-tag.env{background:rgba(239,68,68,.12);color:var(--red)}
+.prompt-block pre{padding:18px 20px;font-family:'JetBrains Mono',monospace;font-size:.8em;color:var(--gray-l);line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.copy-btn{position:absolute;top:10px;right:14px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--gray);font-family:'JetBrains Mono',monospace;font-size:.68em;padding:4px 10px;cursor:pointer;transition:all .2s;z-index:10}
+.copy-btn:hover{background:var(--lime);color:var(--bg);border-color:var(--lime)}
+.copy-btn.copied{background:var(--green);color:var(--bg);border-color:var(--green)}
+
+/* COLORI NEL CODICE */
+.c{color:var(--gray)}
+.k{color:var(--lime)}
+.s{color:var(--teal)}
+.t{color:var(--amber)}
+.n{color:var(--purple)}
+.g{color:var(--green)}
+
+/* FASE */
+.fase{margin:40px 0 10px}
+.fase-header{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.fase-num{font-family:'JetBrains Mono',monospace;font-size:2em;font-weight:700;color:var(--lime);min-width:48px}
+.fase-title{font-size:1.1em;font-weight:800;color:var(--white)}
+.fase-sub{font-size:.82em;color:var(--gray);margin-top:2px}
+.fase-badge{font-size:.7em;padding:4px 12px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-weight:700;white-space:nowrap}
+.fase-badge.mvp{background:rgba(200,230,74,.15);color:var(--lime)}
+.fase-badge.core{background:rgba(16,185,129,.12);color:var(--green)}
+.fase-badge.scale{background:rgba(45,212,191,.1);color:var(--teal)}
+
+/* ELEMENTI TESTO */
+h2{font-size:1.05em;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:2px;margin:50px 0 16px;display:flex;align-items:center;gap:10px}
+h2::before{content:'//';color:var(--lime-dim);font-family:'JetBrains Mono',monospace}
+h3{font-size:.88em;font-weight:700;color:var(--white);margin:24px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+p{font-size:.86em;color:var(--gray-l);line-height:1.7;margin-bottom:10px}
+.note{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:12px 16px;font-size:.82em;color:var(--gray-l);line-height:1.65;margin:12px 0}
+.note strong{color:var(--amber)}
+.ok{background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:12px 16px;font-size:.82em;color:var(--gray-l);line-height:1.65;margin:12px 0}
+.ok strong{color:var(--green)}
+
+/* HERO */
+.hero{margin:40px 0 50px}
+.hero h1{font-size:2.6em;font-weight:900;line-height:1.1;color:var(--gray)}
+.hero h1 em{font-style:italic;color:var(--lime)}
+.hero p{color:var(--gray);font-size:.92em;margin-top:14px;max-width:660px;line-height:1.65}
+
+/* STEP LIST */
+.steps{margin:12px 0;counter-reset:step}
+.step{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);font-size:.84em;color:var(--gray-l);align-items:flex-start}
+.step:last-child{border-bottom:none}
+.step::before{counter-increment:step;content:counter(step);font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--lime);font-size:.9em;min-width:20px;margin-top:1px}
+
+/* DIVIDER */
+hr{border:none;border-top:1px solid var(--border);margin:40px 0}
+
+.toc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin:30px 0}
+.toc .toc-title{font-size:.75em;font-family:'JetBrains Mono',monospace;color:var(--lime);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc a{display:block;font-size:.82em;color:var(--gray-l);text-decoration:none;padding:4px 0;transition:color .15s}
+.toc a:hover{color:var(--lime)}
+.toc a span{color:var(--lime-dim);font-family:'JetBrains Mono',monospace;margin-right:8px;font-size:.9em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="mono">// MultaCheck · Istruzioni implementazione · Claude Code / Cursor · Aprile 2026</div>
+
+<div class="hero">
+  <h1>Istruzioni codice<br><em>MultaCheck.</em></h1>
+  <p>Prompt pronti da incollare in Claude Code, Cursor o qualsiasi AI coding assistant. Segui le fasi in ordine. Ogni blocco è autonomo e testabile prima di passare al successivo.</p>
+</div>
+
+<div class="toc">
+  <div class="toc-title">// Indice fasi</div>
+  <a href="#f0"><span>00</span> Setup iniziale — repo, Supabase, Vercel</a>
+  <a href="#f1"><span>01</span> Database schema completo</a>
+  <a href="#f2"><span>02</span> Autenticazione Supabase</a>
+  <a href="#f3"><span>03</span> Upload verbale — OCR + parsing Claude</a>
+  <a href="#f4"><span>04</span> Motore di contestabilità</a>
+  <a href="#f5"><span>05</span> Schermata risultato (semaforo + scadenze)</a>
+  <a href="#f6"><span>06</span> Pagamento Stripe</a>
+  <a href="#f7"><span>07</span> Generazione ricorso con Claude</a>
+  <a href="#f8"><span>08</span> Invio PEC alla Prefettura</a>
+  <a href="#f9"><span>09</span> Alert scadenze + notifiche</a>
+  <a href="#f10"><span>10</span> CI/CD GitHub Actions</a>
+</div>
+
+<div class="note">
+  <strong>Come usare questo documento:</strong> ogni blocco "PROMPT" è testo da copiare e incollare direttamente in Claude Code (<code>claude</code> da terminale) o nel chat di Cursor. I blocchi "BASH" sono comandi da eseguire nel terminale. I blocchi "SQL" vanno eseguiti nell'editor SQL di Supabase Dashboard.
+</div>
+
+<hr>
+
+<!-- FASE 0 -->
+<div class="fase" id="f0">
+  <div class="fase-header">
+    <div class="fase-num">00</div>
+    <div>
+      <div class="fase-title">Setup iniziale</div>
+      <div class="fase-sub">Repo GitHub · Monorepo Turborepo · Supabase · Vercel · variabili d'ambiente</div>
+    </div>
+    <div class="fase-badge mvp">Prima cosa</div>
+  </div>
+
+  <h3>1. Crea il repository e il monorepo</h3>
+
+  <div class="prompt-block">
+    <div class="pb-header"><span class="pb-label">BASH — esegui nel terminale</span><span class="pb-tag bash">BASH</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+<span class="c"># Crea repo su GitHub (prima crea il repo vuoto su github.com)</span>
+git clone https://github.com/TUO-USERNAME/multacheck.git
+cd multacheck
+
+<span class="c"># Installa pnpm se non ce l'hai</span>
+npm install -g pnpm
+
+<span class="c"># Inizializza monorepo con Turborepo</span>
+pnpm dlx create-turbo@latest . --package-manager pnpm
+
+<span class="c"># Struttura cartelle</span>
+mkdir -p apps/web apps/admin packages/core packages/db packages/ui supabase/migrations supabase/functions .github/workflows
+
+<span class="c"># Installa dipendenze globali</span>
+pnpm add -D turbo typescript @types/node prettier eslint --workspace-root</pre>
+  </div>
+
+  <h3>2. Crea l'app Next.js principale</h3>
+
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Crea un'app Next.js 15 con App Router nella cartella apps/web con queste specifiche:
+
+- TypeScript strict (tsconfig con strict: true, noUncheckedIndexedAccess: true)
+- Tailwind CSS v4
+- shadcn/ui inizializzato (tema dark)
+- Font: Instrument Sans (display) + IBM Plex Mono (codice) da Google Fonts, NON Inter
+- ESLint + Prettier configurati
+- Path aliases: @/ per src/, @multacheck/core per packages/core, @multacheck/db per packages/db
+- next.config.ts con: experimental.typedRoutes: true, images.remotePatterns per Supabase Storage
+
+Struttura cartelle src/:
+app/
+  (marketing)/page.tsx          → landing page
+  (app)/layout.tsx              → layout autenticato
+  (app)/upload/page.tsx         → upload verbale
+  (app)/analisi/[id]/page.tsx   → risultato analisi
+  (app)/pratiche/page.tsx       → lista pratiche
+  api/verbale/parse/route.ts    → stub vuoto
+  api/ricorso/genera/route.ts   → stub vuoto
+  api/stripe/webhook/route.ts   → stub vuoto
+components/
+  upload/VerbaleUploader.tsx    → stub vuoto
+  analisi/Semaforo.tsx          → stub vuoto
+  ui/                           → shadcn components
+lib/
+  supabase/client.ts            → stub vuoto
+  supabase/server.ts            → stub vuoto
+middleware.ts                   → stub vuoto
+
+Aggiungi al package.json di apps/web:
+- @supabase/supabase-js @supabase/ssr
+- ai @ai-sdk/anthropic
+- stripe @stripe/stripe-js
+- zod
+- date-fns
+- framer-motion
+- sonner (toast notifications)
+- react-dropzone</pre>
+  </div>
+
+  <h3>3. Configura Supabase e Vercel</h3>
+
+  <div class="prompt-block">
+    <div class="pb-header"><span class="pb-label">BASH — setup servizi esterni</span><span class="pb-tag bash">BASH</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+<span class="c"># Installa Supabase CLI</span>
+pnpm add -D supabase --workspace-root
+
+<span class="c"># Login e collega al progetto (crea prima il progetto su supabase.com)</span>
+pnpm supabase login
+pnpm supabase init
+pnpm supabase link --project-ref TUO-PROJECT-REF
+
+<span class="c"># Installa Vercel CLI</span>
+pnpm add -D vercel --workspace-root
+
+<span class="c"># Collega repo a Vercel (segui le istruzioni interattive)</span>
+pnpm vercel link
+
+<span class="c"># Crea il file .env.local (NON committare mai su Git)</span>
+cat > apps/web/.env.local << 'EOF'
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_CLOUD_PROJECT_ID=multacheck-prod
+GOOGLE_CLOUD_CREDENTIALS={}
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+RESEND_API_KEY=re_...
+ARUBA_PEC_API_URL=https://api.pec.aruba.it
+ARUBA_PEC_USERNAME=noreply@pec.multacheck.it
+ARUBA_PEC_PASSWORD=...
+NAMIRIAL_API_KEY=...
+EOF
+
+<span class="c"># Aggiungi .env.local a .gitignore</span>
+echo "**/.env.local" >> .gitignore
+echo "**/.env*.local" >> .gitignore</pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- FASE 1 -->
+<div class="fase" id="f1">
+  <div class="fase-header">
+    <div class="fase-num">01</div>
+    <div>
+      <div class="fase-title">Database schema</div>
+      <div class="fase-sub">Tutte le tabelle · Row Level Security · Tipi TypeScript generati</div>
+    </div>
+    <div class="fase-badge mvp">MVP</div>
+  </div>
+
+  <div class="prompt-block">
+    <div class="pb-header"><span class="pb-label">SQL — incolla nell'editor SQL di Supabase Dashboard</span><span class="pb-tag sql">SQL</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+-- =============================================
+-- MULTACHECK — SCHEMA COMPLETO v1.0
+-- Eseguire nell'editor SQL di Supabase Dashboard
+-- =============================================
+
+-- Estensioni necessarie
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- PROFILI UTENTE (estende auth.users)
+CREATE TABLE profiles (
+  id            UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email         TEXT NOT NULL,
+  phone         TEXT,
+  pec_address   TEXT,           -- PEC provisionata via Namirial
+  has_firma     BOOLEAN DEFAULT false,
+  plan          TEXT DEFAULT 'free' CHECK (plan IN ('free','advise','managed')),
+  stripe_customer_id TEXT,
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  updated_at    TIMESTAMPTZ DEFAULT now()
+);
+
+-- VERBALI
+CREATE TABLE verbali (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id             UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  file_path           TEXT,
+  raw_ocr             JSONB,
+  parsed              JSONB NOT NULL DEFAULT '{}',
+  contestability      JSONB,
+  semaforo            TEXT CHECK (semaforo IN ('verde','giallo','rosso')),
+  score               INT CHECK (score BETWEEN 0 AND 100),
+  status              TEXT DEFAULT 'parsed' CHECK (
+                        status IN ('parsed','paid','ricorso_generato','inviato','esito')
+                      ),
+  -- Campi estratti per query veloci
+  tipo_infrazione     TEXT,     -- velocita|sosta|ztl|semaforo|telefono|altro
+  importo_base        NUMERIC(8,2),
+  importo_ridotto     NUMERIC(8,2),
+  importo_doppio      NUMERIC(8,2),
+  punti_decurtati     INT,
+  data_infrazione     DATE,
+  data_notifica       DATE,
+  ente_accertatore    TEXT,
+  provincia           CHAR(2),
+  -- Scadenze calcolate
+  scadenza_sconto     DATE,     -- data_notifica + 5gg (contestazione immediata) o 60gg
+  scadenza_prefetto   DATE,     -- data_notifica + 60gg
+  scadenza_gdp        DATE,     -- data_notifica + 30gg
+  -- Metadata
+  parsing_confidence  NUMERIC(3,2),
+  created_at          TIMESTAMPTZ DEFAULT now()
+);
+
+-- PRATICHE DI RICORSO
+CREATE TABLE pratiche (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  verbale_id      UUID NOT NULL REFERENCES verbali(id) ON DELETE CASCADE,
+  user_id         UUID NOT NULL REFERENCES profiles(id),
+  tipo            TEXT NOT NULL CHECK (tipo IN ('prefetto','gdp','autotutela')),
+  tier            TEXT NOT NULL CHECK (tier IN ('advise','managed')),
+  stripe_pi       TEXT,           -- Stripe PaymentIntent ID
+  importo_pagato  INT,            -- in centesimi
+  ricorso_draft   TEXT,
+  ricorso_pdf     TEXT,           -- path su Storage
+  pec_message_id  TEXT,
+  pec_sent_at     TIMESTAMPTZ,
+  pec_ricevuta    TEXT,
+  esito           TEXT CHECK (esito IN ('accolto','rigettato','silenzio_assenso','pendente')),
+  avvocato_id     UUID,
+  note_legali     TEXT,
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  updated_at      TIMESTAMPTZ DEFAULT now()
+);
+
+-- AUTOVELOX MIT (sync settimanale)
+CREATE TABLE autovelox_omologati (
+  id          SERIAL PRIMARY KEY,
+  codice_mit  TEXT UNIQUE NOT NULL,
+  modello     TEXT,
+  produttore  TEXT,
+  omologato   BOOLEAN DEFAULT false,
+  data_dm     DATE,
+  comune      TEXT,
+  provincia   CHAR(2),
+  note        TEXT,
+  updated_at  TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_autovelox_modello ON autovelox_omologati USING gin(to_tsvector('italian', modello));
+
+-- PREFETTURE E PEC UFFICIALI
+CREATE TABLE prefetture (
+  provincia     CHAR(2) PRIMARY KEY,
+  nome          TEXT NOT NULL,
+  pec_address   TEXT NOT NULL,
+  accetta_pec   BOOLEAN DEFAULT true,
+  note          TEXT
+);
+
+-- CONSENSI GDPR
+CREATE TABLE consents (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  tipo        TEXT NOT NULL,   -- 'privacy_policy' | 'terms' | 'marketing'
+  version     TEXT NOT NULL,
+  accepted_at TIMESTAMPTZ DEFAULT now(),
+  ip_hash     TEXT
+);
+
+-- =============================================
+-- ROW LEVEL SECURITY
+-- =============================================
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE verbali ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pratiche ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "profiles_owner" ON profiles FOR ALL USING (auth.uid() = id);
+CREATE POLICY "verbali_owner" ON verbali FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "pratiche_owner" ON pratiche FOR ALL USING (auth.uid() = user_id);
+
+-- Lettura pubblica autovelox e prefetture (nessun dato personale)
+ALTER TABLE autovelox_omologati ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "autovelox_public_read" ON autovelox_omologati FOR SELECT USING (true);
+ALTER TABLE prefetture ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "prefetture_public_read" ON prefetture FOR SELECT USING (true);
+
+-- =============================================
+-- TRIGGER: aggiorna updated_at automaticamente
+-- =============================================
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = now(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER profiles_updated_at BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER pratiche_updated_at BEFORE UPDATE ON pratiche
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();</pre>
+  </div>
+
+  <h3>Genera i tipi TypeScript da Supabase</h3>
+  <div class="prompt-block">
+    <div class="pb-header"><span class="pb-label">BASH</span><span class="pb-tag bash">BASH</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+<span class="c"># Genera tipi TypeScript dal database (rieseguire dopo ogni migration)</span>
+pnpm supabase gen types typescript --linked > packages/db/src/types.ts
+
+<span class="c"># Salva anche come migration locale</span>
+pnpm supabase db diff --use-migra -f schema_v1</pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- FASE 2 -->
+<div class="fase" id="f2">
+  <div class="fase-header">
+    <div class="fase-num">02</div>
+    <div>
+      <div class="fase-title">Autenticazione</div>
+      <div class="fase-sub">Supabase Auth · Magic link · Middleware protezione route · Client/Server</div>
+    </div>
+    <div class="fase-badge mvp">MVP</div>
+  </div>
+
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Implementa l'autenticazione completa con Supabase Auth in apps/web seguendo queste specifiche esatte:
+
+1. FILE: src/lib/supabase/client.ts
+   - createBrowserClient da @supabase/ssr
+   - singleton pattern per evitare istanze multiple
+
+2. FILE: src/lib/supabase/server.ts
+   - createServerClient da @supabase/ssr con cookies() da next/headers
+   - funzione getUser() che ritorna l'utente autenticato o null
+   - funzione requireUser() che fa redirect a /login se non autenticato
+
+3. FILE: src/middleware.ts
+   - Proteggi tutte le route sotto /app/* e /api/* (tranne /api/stripe/webhook)
+   - Redirect non autenticati a /login
+   - Usa updateSession da @supabase/ssr per refresh token automatico
+   - Rate limiting: max 10 richieste/minuto per IP su /api/verbale/*
+
+4. FILE: src/app/(marketing)/login/page.tsx
+   - Form con solo campo email (niente password)
+   - Submit chiama signInWithOtp con magic link
+   - Schermata di conferma "Controlla la tua email"
+   - Bottone "Accedi con Google" sotto
+   - Design: mobile-first, minimal, centrato verticalmente
+   - Font Instrument Sans per il titolo, IBM Plex Mono per "Magic Link"
+
+5. FILE: src/app/auth/callback/route.ts
+   - Handler GET che scambia il code per la sessione
+   - Redirect a /upload dopo login con successo
+   - Crea il profilo in tabella profiles se è il primo login
+
+6. FILE: src/app/(app)/layout.tsx
+   - Server component
+   - Chiama requireUser() — redirect automatico se non autenticato
+   - Passa user come prop ai children
+   - Navbar minimal con logo + link "Mie pratiche" + avatar con dropdown logout</pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- FASE 3 -->
+<div class="fase" id="f3">
+  <div class="fase-header">
+    <div class="fase-num">03</div>
+    <div>
+      <div class="fase-title">Upload verbale — OCR + parsing</div>
+      <div class="fase-sub">Camera nativa mobile · Google Vision · Claude parsing · Skeleton loading</div>
+    </div>
+    <div class="fase-badge mvp">MVP — feature core</div>
+  </div>
+
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Implementa il flusso completo di upload e analisi verbale in apps/web:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP A — Componente Upload (Client Component)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: src/components/upload/VerbaleUploader.tsx
+
+Comportamento:
+- Input file nascosto con accept="image/*,application/pdf" e capture="environment"
+  Questo apre la FOTOCAMERA sul telefono, non la galleria
+- Area cliccabile grande (min-height: 280px su mobile, 320px su desktop)
+- Drag and drop su desktop
+- Preview dell'immagine scattata prima di confermare
+- Se l'immagine è storta, mostrare un hint "Inquadra bene il verbale"
+- Al confirm, chiama l'API /api/verbale/parse con FormData
+
+Step visibili durante l'elaborazione (NON uno spinner generico):
+  1. "📤 Caricamento..." (0-2s)
+  2. "🔍 Lettura del testo..." (2-6s) — Vision API OCR
+  3. "🧠 Analisi del verbale..." (6-10s) — Claude parsing
+  4. "✅ Fatto!" → redirect a /analisi/[id]
+
+Usa Framer Motion per le transizioni tra gli step.
+Usa sonner per toast di errore se upload fallisce.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP B — API Route di parsing
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILE: src/app/api/verbale/parse/route.ts
+
+Flusso:
+1. Ricevi il file dal FormData
+2. Valida: max 10MB, solo image/* o application/pdf
+3. Carica il file su Supabase Storage nel bucket "verbali" 
+   con path: {userId}/{verbaleId}.{ext}
+   (crea URL firmato con scadenza 1 ora per l'elaborazione)
+4. Chiama Google Cloud Vision API per OCR:
+   - Se PDF: usa document text detection
+   - Se immagine: usa text detection
+   - Endpoint: POST https://vision.googleapis.com/v1/images:annotate
+   - Auth: service account key da env GOOGLE_CLOUD_CREDENTIALS
+5. Passa il testo OCR a Claude per parsing strutturato:
+
+   usa generateObject da 'ai' con schema Zod:
+   {
+     ente_accertatore: z.string(),
+     numero_verbale: z.string().optional(),
+     targa: z.string().optional(),
+     intestatario: z.string().optional(),
+     data_infrazione: z.string().optional(), // YYYY-MM-DD
+     ora_infrazione: z.string().optional(),
+     luogo_infrazione: z.string().optional(),
+     articolo_violato: z.string().optional(),
+     tipo_infrazione: z.enum(['velocita','sosta','ztl','semaforo','telefono','altro']),
+     importo_ridotto: z.number().optional(),
+     importo_base: z.number().optional(),
+     data_notifica: z.string().optional(), // YYYY-MM-DD
+     modalita_notifica: z.string().optional(),
+     dispositivo_tipo: z.string().optional(),
+     velocita_rilevata: z.number().optional(),
+     velocita_limite: z.number().optional(),
+     punti_decurtati: z.number().optional(),
+     parsing_confidence: z.number().min(0).max(1)
+   }
+
+   System prompt Claude:
+   "Sei un esperto di diritto stradale italiano. Estrai i campi strutturati 
+   dal testo OCR di un verbale di contravvenzione italiano. 
+   Per data_infrazione e data_notifica usa formato YYYY-MM-DD.
+   Per parsing_confidence dai un valore da 0 a 1 che indica quanto sei 
+   sicuro dell'estrazione (0.9+ = molto sicuro, sotto 0.7 = dati incerti)."
+
+6. Calcola le scadenze:
+   - scadenza_sconto = data_notifica + 5 giorni (se contravvenzione contestata immediatamente)
+     OPPURE data_notifica + 60 giorni × 30% sconto (dipende dall'ente — usa 60gg come default)
+   - scadenza_prefetto = data_notifica + 60 giorni
+   - scadenza_gdp = data_notifica + 30 giorni
+   Usa date-fns per i calcoli.
+
+7. Salva tutto in tabella verbali su Supabase
+8. Ritorna { verbaleId, semaforo: null, parsed } al client
+   (il semaforo viene calcolato nel passo successivo)
+
+Gestione errori:
+- Vision API fallisce → ritorna errore 422 con messaggio "Immagine non leggibile"
+- Claude ritorna confidence < 0.6 → salva comunque ma setta un flag needs_manual_review: true
+- Timeout dopo 30 secondi → errore 504</pre>
+  </div>
+
+  <h3>Package core — logiche di parsing riutilizzabili</h3>
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Crea il package packages/core con queste funzioni TypeScript pure (zero dipendenze esterne):
+
+FILE: packages/core/src/scadenze.ts
+- calcolaScadenze(dataNotizia: string): { scadenzaSconto, scadenzaPrefetto, scadenzaGdp, giorniAlPrefetto, giorniAlGdp, scaduto }
+- scadenzaUrgente(data: string): boolean  → true se mancano meno di 7 giorni
+- formattaScadenza(data: string): string  → "15 novembre 2024 (tra 12 giorni)"
+- giornatorimanenti(data: string): number
+
+FILE: packages/core/src/parsing.ts  
+- normalizzaTarga(targa: string): string  → "AA 000 BB" normalizzata
+- normalizzaProvincia(testo: string): string | null  → estrae sigla provincia
+- parseImporto(testo: string): number | null  → "€ 173,33" → 173.33
+- parseData(testo: string): string | null  → vari formati → YYYY-MM-DD
+
+FILE: packages/core/src/index.ts
+- Esporta tutto
+
+Aggiungi test Vitest per ogni funzione in packages/core/src/__tests__/
+con almeno 5 casi per funzione (inclusi edge cases: date invalide, formati diversi, null input).</pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- FASE 4 -->
+<div class="fase" id="f4">
+  <div class="fase-header">
+    <div class="fase-num">04</div>
+    <div>
+      <div class="fase-title">Motore di contestabilità</div>
+      <div class="fase-sub">Scoring automatico · Vizi rilevabili · Lookup autovelox MIT</div>
+    </div>
+    <div class="fase-badge mvp">MVP — il cervello del prodotto</div>
+  </div>
+
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Crea il motore di contestabilità in packages/core/src/contestability.ts
+
+Il motore è una funzione TypeScript PURA (no side effects, no API calls, testabile).
+Prende i dati del verbale e ritorna il risultato di contestabilità.
+
+INTERFACCE da creare:
+
+interface Vizio {
+  tipo: string
+  titolo: string           // "Notifica tardiva"
+  descrizione: string      // spiegazione human-readable
+  normativa: string        // "Art. 201 D.Lgs. 285/1992"
+  peso: number             // contributo allo score (0-30)
+  automatico: boolean      // rilevato automaticamente vs richiede verifica manuale
+  probabilita: 'alta' | 'media' | 'bassa'
+}
+
+interface ContestabilityInput {
+  data_infrazione: string
+  data_notifica: string
+  tipo_infrazione: string
+  importo_base: number
+  dispositivo_tipo?: string
+  articolo_violato?: string
+  numero_verbale?: string
+  ente_accertatore?: string
+  parsing_confidence: number
+  autovelox_omologato?: boolean  // null se non trovato nel DB
+}
+
+interface ContestabilityResult {
+  semaforo: 'verde' | 'giallo' | 'rosso'
+  score: number              // 0-100
+  vizi: Vizio[]
+  raccomandazione: string    // testo human-readable
+  rischio_raddoppio: boolean // sempre true se si va al Prefetto
+  conviene_contestare: boolean
+  risparmio_potenziale: number  // importo_base se vince
+  costo_rischio: number         // importo_base × 2 se perde al Prefetto
+}
+
+REGOLE DEL MOTORE (implementa in ordine di peso):
+
+1. NOTIFICA TARDIVA (peso 30 — massimo)
+   Se differenza tra data_infrazione e data_notifica > 90 giorni → vizio AUTOMATICO
+   Normativa: Art. 201 c. 1 D.Lgs. 285/1992
+   Probabilita: alta
+
+2. AUTOVELOX NON OMOLOGATO (peso 28)
+   Se tipo_infrazione === 'velocita' E autovelox_omologato === false → vizio AUTOMATICO
+   Normativa: Cass. n.10505/2024; Cass. n.7374/2026
+   Probabilita: alta
+   Se autovelox_omologato === null → aggiungi vizio con automatico: false 
+   ("Non siamo riusciti a verificare il dispositivo — approfondire")
+
+3. MANCANZA NUMERO VERBALE (peso 18)
+   Se numero_verbale è null/empty → vizio AUTOMATICO
+   Normativa: Art. 200 c. 1 lett. a) D.Lgs. 285/1992
+
+4. MANCANZA NORMA VIOLATA (peso 18)
+   Se articolo_violato è null/empty → vizio AUTOMATICO
+
+5. MANCANZA ENTE ACCERTATORE (peso 12)
+   Se ente_accertatore è null/empty → vizio AUTOMATICO
+
+6. PARSING INCERTO (peso -5, penalità)
+   Se parsing_confidence < 0.7 → riduci score, aggiungi nota 
+   "Alcuni dati non sono stati letti chiaramente — verifica manuale consigliata"
+
+CALCOLO SEMAFORO:
+- score >= 40 → verde (contesta)
+- score 15-39 → giallo (valuta attentamente)
+- score < 15 → rosso (paga — non conviene)
+
+RACCOMANDAZIONE:
+- verde: "Il verbale presenta vizi significativi. Ti consigliamo di contestarlo."
+- giallo: "Il verbale presenta alcune irregolarità ma il successo non è garantito. 
+           Considera che un ricorso al Prefetto, se perso, comporta il pagamento 
+           del doppio dell'importo (€{importo_doppio})."
+- rosso: "Non abbiamo trovato vizi rilevanti. Ti consigliamo di pagare entro 
+          il {data_scadenza_sconto} per ottenere lo sconto del 30% 
+          (risparmi €{risparmio_sconto})."
+
+AGGIUNGI VITEST per ogni regola con almeno 3 casi di test ciascuna.
+
+Poi crea in apps/web/src/app/api/verbale/[id]/analyze/route.ts
+un endpoint POST che:
+1. Legge il verbale da Supabase
+2. Fa lookup del dispositivo in tabella autovelox_omologati (cerca per modello simile)
+3. Chiama analizzaContestabilita()
+4. Aggiorna verbale con contestability, semaforo, score
+5. Ritorna il risultato</pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- FASE 5 -->
+<div class="fase" id="f5">
+  <div class="fase-header">
+    <div class="fase-num">05</div>
+    <div>
+      <div class="fase-title">Schermata risultato — il semaforo</div>
+      <div class="fase-sub">Free result · Scadenze · Upsell verso pagamento</div>
+    </div>
+    <div class="fase-badge mvp">MVP</div>
+  </div>
+
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Crea la pagina /analisi/[id] in apps/web/src/app/(app)/analisi/[id]/page.tsx
+
+È una Server Component che:
+1. Legge il verbale dal database (requireUser + verifica ownership)
+2. Se status === 'parsed' e contestability è null → chiama /api/verbale/[id]/analyze
+3. Renderizza la UI del risultato FREE
+
+SEZIONE 1 — IL SEMAFORO (sopra il fold su mobile)
+Componente: src/components/analisi/Semaforo.tsx
+- Cerchio grande (120px) animato con Framer Motion che "si accende" in verde/giallo/rosso
+- Score numerico al centro (es. "74")
+- Titolo sotto: "Alta probabilità di contestazione" / "Valuta attentamente" / "Ti conviene pagare"
+- Raccomandazione in testo chiaro sotto
+
+SEZIONE 2 — SCADENZE (urgente, sempre visibile su mobile)
+Card con countdown visivo:
+- "Sconto 30%: scade il 15 nov (tra 8 giorni)" — se < 5 giorni: rosso lampeggiante
+- "Ricorso al Prefetto: entro il 14 gen (tra 62 giorni)"
+- "Ricorso al GdP: entro il 14 dic (tra 32 giorni)"
+Usa date-fns per i calcoli. Aggiorna ogni secondo se < 24h.
+
+SEZIONE 3 — VIZI TROVATI (solo titoli, descrizione bloccata per free)
+Lista dei vizi con icona ✓ o ⚠
+- Titolo e normativa visibili
+- Descrizione completa bloccata: sfocatura CSS con "Sblocca il report completo"
+
+SEZIONE 4 — CTA PAGAMENTO
+Due card affiancate su desktop, impilate su mobile:
+
+Card 1 — "Report completo" (€19,90)
+  - Lista bullet di cosa include
+  - Bottone "Ottieni il report" → Stripe checkout per price_id P1
+  - Highlight: "Più scelto"
+
+Card 2 — "Gestione completa" (€39,90)
+  - Include report + invio PEC alla Prefettura
+  - Bottone "Gestisci tutto" → Stripe checkout per price_id P2
+
+SEZIONE 5 — INFO TRASPARENZA (sempre visibile anche per semaforo rosso)
+"Se hai già pagato la multa con lo sconto: non puoi più fare ricorso. 
+ Il pagamento ridotto chiude automaticamente ogni possibilità di contestazione."
+Testo piccolo, grigio, honest.
+
+MOBILE FIRST: 
+- Tutto in colonna singola su mobile
+- Semaforo e scadenze PRIMA dei vizi e del CTA
+- Font size minimo 16px per testo body
+- Touch targets minimo 44px di altezza per tutti i bottoni</pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- FASE 6 -->
+<div class="fase" id="f6">
+  <div class="fase-header">
+    <div class="fase-num">06</div>
+    <div>
+      <div class="fase-title">Pagamento Stripe</div>
+      <div class="fase-sub">Checkout · Apple Pay / Google Pay · Webhook · Sblocco contenuti</div>
+    </div>
+    <div class="fase-badge mvp">MVP</div>
+  </div>
+
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Implementa il sistema di pagamento completo con Stripe in apps/web:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/app/api/checkout/route.ts  (POST)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Riceve: { verbaleId, tier: 'advise' | 'managed' }
+
+1. Verifica che l'utente sia autenticato e owner del verbale
+2. Recupera o crea stripe_customer_id per l'utente
+3. Crea PaymentIntent con:
+   - amount: tier === 'advise' ? 1990 : 3990  (in centesimi)
+   - currency: 'eur'
+   - metadata: { verbaleId, userId, tier }
+   - automatic_payment_methods: { enabled: true }  → abilita Apple/Google Pay
+4. Crea record in pratiche con status 'pending' e stripe_pi
+5. Ritorna { clientSecret } al client
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/components/pagamento/CheckoutForm.tsx  (Client Component)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Usa @stripe/stripe-js e @stripe/react-stripe-js:
+- Elements wrapper con clientSecret
+- PaymentElement (gestisce automaticamente Apple Pay, Google Pay, carte)
+- ExpressCheckoutElement per Apple/Google Pay in cima (se disponibile)
+- Submit button con loading state
+- Gestione errori inline (no alert, errore sotto il campo)
+- Redirect a /analisi/[id]/elaborazione dopo pagamento confermato
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/app/api/stripe/webhook/route.ts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IMPORTANTE: questo endpoint non richiede autenticazione (è chiamato da Stripe)
+e deve essere escluso dal middleware.
+
+1. Verifica la firma Stripe con STRIPE_WEBHOOK_SECRET
+2. Su evento payment_intent.succeeded:
+   - Aggiorna pratiche: status → 'paid', importo_pagato
+   - Aggiorna verbali: status → 'paid'
+   - Se tier === 'advise': avvia generazione report (chiama internamente /api/ricorso/genera)
+   - Se tier === 'managed': avvia generazione + invio PEC
+   - Invia email di conferma all'utente via Resend
+3. Ritorna 200 immediatamente (Stripe riprova se non riceve 200 entro 30s)</pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- FASE 7 -->
+<div class="fase" id="f7">
+  <div class="fase-header">
+    <div class="fase-num">07</div>
+    <div>
+      <div class="fase-title">Generazione ricorso con Claude</div>
+      <div class="fase-sub">Streaming · PDF · Template legale validato da avvocato</div>
+    </div>
+    <div class="fase-badge core">Core feature</div>
+  </div>
+
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Implementa la generazione del ricorso in apps/web:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/app/api/ricorso/genera/route.ts  (POST)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Riceve: { praticaId }
+Auth: richiede utente autenticato + verifica ownership pratica
+
+1. Leggi verbale + pratica + vizi da Supabase
+2. Costruisci il prompt per Claude:
+
+   System: "Sei un avvocato specializzato in diritto stradale italiano con 
+   15 anni di esperienza. Redigi ricorsi al Prefetto formalmente corretti, 
+   citando sempre la normativa vigente e la giurisprudenza della Corte di 
+   Cassazione più recente. Il tono deve essere formale e tecnico ma chiaro.
+   NON usare frasi come 'spero che' o 'mi permetto di'. 
+   Il ricorso DEVE rispettare il formato dell'art. 203 D.Lgs. 285/1992."
+
+   User prompt (costruiscilo con i dati reali del verbale):
+   "Redigi un ricorso al Prefetto per il seguente verbale:
+   
+   DATI DEL VERBALE:
+   - Numero: {numero_verbale}
+   - Ente: {ente_accertatore}
+   - Data infrazione: {data_infrazione}
+   - Importo: €{importo_base}
+   - Art. violato: {articolo_violato}
+   - Data notifica: {data_notifica}
+   
+   MOTIVI DI CONTESTAZIONE IDENTIFICATI:
+   {lista_vizi_con_normativa}
+   
+   Il ricorso deve includere:
+   1. Intestazione formale all'organo competente
+   2. Generalità del ricorrente (usa [NOME COGNOME], [INDIRIZZO], [CF])
+   3. Indicazione del verbale impugnato
+   4. Motivi di ricorso (uno per vizio, con normativa e giurisprudenza)
+   5. Conclusioni (richiesta di annullamento)
+   6. Data e luogo
+   7. Spazio per firma"
+
+3. Usa streamText da 'ai' per streaming response
+4. Man mano che arriva il testo, aggiorna pratiche.ricorso_draft su Supabase
+5. Al completamento, genera PDF con @react-pdf/renderer:
+   - Intestazione con logo MultaCheck
+   - Testo del ricorso formattato
+   - Footer con "Generato con assistenza legale — [nome avvocato partner]"
+6. Carica PDF su Supabase Storage: pratiche/{praticaId}/ricorso.pdf
+7. Aggiorna pratica: ricorso_pdf = path, status = 'ricorso_generato'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/app/(app)/analisi/[id]/report/page.tsx
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Pagina del report completo (sbloccata dopo pagamento P1):
+- Mostra il testo del ricorso generato
+- Bottone "Scarica PDF" → URL firmato da Supabase Storage
+- Sezione "Prossimi passi":
+  - Se tier === 'advise': istruzioni su come inviare via PEC dalla propria casella
+    con link alla PEC della Prefettura competente (lookup da tabella prefetture)
+  - Se tier === 'managed': "Stiamo inviando il ricorso via PEC per te" con tracking</pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- FASE 8 -->
+<div class="fase" id="f8">
+  <div class="fase-header">
+    <div class="fase-num">08</div>
+    <div>
+      <div class="fase-title">Invio PEC alla Prefettura</div>
+      <div class="fase-sub">Provisioning PEC utente · Firma digitale · API Aruba · Tracking</div>
+    </div>
+    <div class="fase-badge core">Tier Managed</div>
+  </div>
+
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Implementa il sistema di invio PEC in apps/web:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/lib/pec/namirial.ts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Wrapper per API Namirial (provisioning PEC + firma digitale):
+
+async function provisionaPEC(userId: string, userData: {
+  nome: string, cognome: string, codiceFiscale: string, email: string
+}): Promise<{ pecAddress: string, success: boolean }>
+// Chiama REST API Namirial per attivare casella PEC a nome utente
+// Salva pecAddress in profiles.pec_address
+// Usa NAMIRIAL_API_KEY da env
+
+async function firmaDocumento(pdfPath: string, userId: string): Promise<string>
+// Scarica PDF da Supabase Storage
+// Invia a Namirial per firma con chiave utente
+// Ritorna path del PDF firmato
+// NOTA: in fase MVP, la firma può essere simulata (apponi solo timbro visivo)
+// e gestita manualmente dall'avvocato partner
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/lib/pec/aruba.ts  
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Wrapper per API Aruba PEC (invio effettivo):
+
+async function inviaPEC(params: {
+  from: string          // PEC dell'utente
+  to: string            // PEC della Prefettura (da tabella prefetture)
+  subject: string       // "Ricorso avverso verbale n. XXXX"
+  body: string          // testo dell'atto
+  attachments: { filename: string, content: Buffer }[]
+}): Promise<{ messageId: string, ricevutaPath: string }>
+
+Gestione ricevuta: scarica la ricevuta PEC e salvala su Storage
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/app/api/pec/invia/route.ts  (POST)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Riceve: { praticaId }
+Auth: richiede utente autenticato
+
+Flusso completo:
+1. Leggi pratica + verbale + profilo utente
+2. Verifica che status === 'ricorso_generato'
+3. Controlla che user abbia pec_address — se no, chiama provisionaPEC()
+4. Firma il PDF ricorso (o segna per revisione avvocato in MVP)
+5. Leggi PEC Prefettura da tabella prefetture per la provincia del verbale
+6. Costruisci oggetto email PEC:
+   - from: user.pec_address
+   - to: prefettura.pec_address
+   - subject: `Ricorso avverso verbale n. {numero_verbale} del {data_verbale}`
+   - body: testo formale con dati ricorrente e riferimento al verbale
+   - attachments: [ricorso firmato PDF, copia verbale, documento identità se presente]
+7. Chiama inviaPEC()
+8. Aggiorna pratica: pec_message_id, pec_sent_at, pec_ricevuta, status = 'inviato'
+9. Invia email di conferma all'utente con copia della ricevuta PEC
+10. Ritorna { success: true, sentAt, messageId }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/app/(app)/analisi/[id]/invio/page.tsx
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Pagina di tracking (sbloccata dopo pagamento P2):
+Timeline verticale con:
+  ✅ Ricorso generato — {data}
+  ✅ PEC inviata alla Prefettura di {provincia} — {data ora}
+     "Indirizzo: {pec_prefettura}"
+  ⏳ In attesa di risposta — La Prefettura ha 210 giorni per rispondere
+     "Se non risponde entro 210 giorni, il silenzio vale come accoglimento"
+  ○ Esito (da aggiornare quando disponibile)
+
+Realtime: usa Supabase Realtime per aggiornare la pagina quando
+pratiche.status cambia (es. da 'inviato' a quando l'avvocato registra l'esito)</pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- FASE 9 -->
+<div class="fase" id="f9">
+  <div class="fase-header">
+    <div class="fase-num">09</div>
+    <div>
+      <div class="fase-title">Alert scadenze + notifiche</div>
+      <div class="fase-sub">Vercel Cron · Email Resend · Web Push · Lista pratiche</div>
+    </div>
+    <div class="fase-badge core">Retention</div>
+  </div>
+
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Implementa il sistema di alert e la pagina pratiche:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/app/api/cron/scadenze/route.ts  (GET)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Questo endpoint viene chiamato ogni mattina alle 8:00 da Vercel Cron.
+Proteggilo con CRON_SECRET header (confronta con env var).
+
+Logica:
+1. Query Supabase: verbali dove status IN ('parsed') 
+   E (scadenza_prefetto = TODAY + 7 OR scadenza_prefetto = TODAY + 3 OR scadenza_prefetto = TODAY + 1)
+   E user ha email
+
+2. Per ogni verbale trovato, invia email via Resend:
+   Template: "⚠️ Hai X giorni per contestare la tua multa"
+   Corpo:
+   - Importo multa e data
+   - Giorni rimanenti in grande
+   - CTA: "Analizza subito il verbale" → link a /analisi/{id}
+   - Se semaforo verde: "Abbiamo già identificato vizi nel tuo verbale"
+   - Firma anti-spam: "Stai ricevendo questa email perché hai caricato un verbale su MultaCheck"
+
+3. Stessa logica per scadenza_sconto (7, 3, 1 giorni) con messaggio diverso:
+   "Hai ancora X giorni per pagare con il 30% di sconto"
+
+4. Logga gli invii per evitare duplicati (tabella email_log)
+
+Aggiungi in vercel.json:
+{
+  "crons": [{ "path": "/api/cron/scadenze", "schedule": "0 8 * * *" }]
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/app/(app)/pratiche/page.tsx
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Lista di tutti i verbali caricati dall'utente.
+
+Layout mobile-first: lista di card verticali con:
+- Semaforo colorato (pallino) a sinistra
+- Centro: tipo infrazione + ente + data + importo
+- Destra: scadenza più urgente con badge colorato
+  - Rosso lampeggiante se < 3 giorni
+  - Arancione se < 7 giorni
+  - Verde se > 30 giorni
+
+Status badge in fondo alla card:
+"Analizzato" | "Report acquistato" | "PEC inviata" | "Vinto ✓" | "Rigettato ✗"
+
+Ordina per scadenza più vicina (urgente prima).
+Empty state carino: "Nessun verbale ancora. Fotografa la tua prima multa →"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: src/lib/email/templates/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Crea template email con React Email (@react-email/components):
+
+- scadenza-alert.tsx: alert scadenza (usa tabella HTML per email client compatibility)
+- conferma-pagamento.tsx: ricevuta dopo acquisto
+- ricorso-inviato.tsx: conferma invio PEC con numero ricevuta
+- magic-link.tsx: email di login (custom, più bella di quella default Supabase)
+
+Tutti i template devono:
+- Funzionare su Gmail + Outlook + Apple Mail
+- Font system (Supabase email non carica Google Fonts)
+- Logo testo "MultaCheck" (no immagini nel header)
+- Footer con link unsubscribe e privacy policy</pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- FASE 10 -->
+<div class="fase" id="f10">
+  <div class="fase-header">
+    <div class="fase-num">10</div>
+    <div>
+      <div class="fase-title">CI/CD — GitHub Actions</div>
+      <div class="fase-sub">Test su ogni PR · Preview environment · Deploy automatico su main</div>
+    </div>
+    <div class="fase-badge scale">DevOps</div>
+  </div>
+
+  <div class="prompt-block primary">
+    <div class="pb-header"><span class="pb-label">PROMPT — incolla in Claude Code</span><span class="pb-tag claude">CLAUDE CODE</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+Crea i workflow GitHub Actions per MultaCheck:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: .github/workflows/ci.yml
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Trigger: pull_request su main e develop
+
+Jobs in parallelo:
+1. typecheck: pnpm turbo typecheck
+2. lint: pnpm turbo lint
+3. test: pnpm turbo test (Vitest per packages/core)
+4. build: pnpm turbo build --filter=apps/web
+
+Se tutti passano → commenta sulla PR con ✅
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: .github/workflows/preview.yml
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Trigger: pull_request opened/updated
+
+1. Crea Supabase branch per la PR (usa supabase/setup-cli action)
+   - supabase branches create pr-{PR_NUMBER}
+   - Applica le migrations sul branch
+   - Ottieni URL e keys del branch
+
+2. Deploy su Vercel come preview con le env var del branch Supabase
+   - Commenta sulla PR con il link preview
+
+3. Su PR chiusa/merged: cancella il Supabase branch
+
+Secrets GitHub necessari (configura in Settings → Secrets):
+- SUPABASE_ACCESS_TOKEN
+- SUPABASE_PROJECT_ID
+- VERCEL_TOKEN
+- VERCEL_ORG_ID
+- VERCEL_PROJECT_ID
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: .github/workflows/deploy.yml
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Trigger: push su main
+
+1. Applica migrations Supabase in produzione:
+   supabase db push --linked
+
+2. Deploy Vercel production:
+   vercel --prod --token $VERCEL_TOKEN
+
+3. Rigenera tipi TypeScript da Supabase e committa se cambiati:
+   supabase gen types typescript --linked > packages/db/src/types.ts
+   git diff --quiet || (git add packages/db/src/types.ts && git commit -m "chore: update supabase types")
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: .github/dependabot.yml
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Configura Dependabot per:
+- npm packages (weekly, auto-merge per patch versions)
+- GitHub Actions (monthly)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE: .github/PULL_REQUEST_TEMPLATE.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Template PR con checklist:
+- [ ] I test passano localmente
+- [ ] Ho aggiornato i tipi Supabase se ho modificato lo schema
+- [ ] Ho testato su mobile (Chrome DevTools o dispositivo reale)
+- [ ] Le variabili env necessarie sono documentate
+- [ ] Nessun secret nel codice</pre>
+  </div>
+
+  <h3>Proteggi il branch main</h3>
+  <div class="prompt-block">
+    <div class="pb-header"><span class="pb-label">BASH — configura via GitHub CLI</span><span class="pb-tag bash">BASH</span></div>
+    <button class="copy-btn" onclick="copyBlock(this)">copia</button>
+    <pre>
+<span class="c"># Installa GitHub CLI se non ce l'hai</span>
+brew install gh
+gh auth login
+
+<span class="c"># Configura branch protection su main</span>
+gh api repos/:owner/:repo/branches/main/protection \
+  --method PUT \
+  --field required_status_checks='{"strict":true,"checks":[{"context":"typecheck"},{"context":"test"},{"context":"build"}]}' \
+  --field enforce_admins=false \
+  --field required_pull_request_reviews='{"required_approving_review_count":1}' \
+  --field restrictions=null</pre>
+  </div>
+</div>
+
+<hr>
+
+<h2>Verifiche finali prima del lancio</h2>
+
+<div class="ok">
+  <strong>Checklist MVP (da completare prima di andare live):</strong>
+  <div class="steps">
+    <div class="step">Supabase RLS testata: accedi come utente A e verifica che NON vedi i verbali di utente B</div>
+    <div class="step">Stripe webhook testato in locale con <code>stripe listen --forward-to localhost:3000/api/stripe/webhook</code></div>
+    <div class="step">Flusso completo testato su iPhone reale (non solo DevTools): upload foto → analisi → pagamento Apple Pay</div>
+    <div class="step">Lighthouse mobile score ≥ 90 su /upload e /analisi/[id]</div>
+    <div class="step">Test invio PEC in modalità test (sandbox Aruba) con ricevuta reale</div>
+    <div class="step">GDPR: pagina privacy policy + cookie banner + endpoint cancellazione account funzionante</div>
+    <div class="step">Avvocato partner ha firmato l'accordo e reviewato almeno 3 ricorsi generati da Claude</div>
+    <div class="step">Supabase backups abilitati (daily) + point-in-time recovery</div>
+    <div class="step">Sentry configurato e riceve errori di test</div>
+    <div class="step">Dominio custom su Vercel + SSL + HSTS header</div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>Ordine consigliato di implementazione:</strong> Fase 0 → 1 → 2 → 3 → 4 → 5 → 6 → deploy MVP → raccogliere feedback → 7 → 8 → 9 → 10. Non serve completare tutto prima di andare live: un MVP con upload, analisi gratuita e report a pagamento (senza PEC automation) è già vendibile e permette di validare il mercato.
+</div>
+
+</div>
+
+<script>
+function copyBlock(btn) {
+  const pre = btn.closest('.prompt-block').querySelector('pre');
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ copiato';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'copia';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>
