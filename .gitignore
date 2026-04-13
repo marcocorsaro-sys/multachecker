@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+
+# turbo
+.turbo/
+
+# env files
+.env
+.env.local
+.env.*.local
+
+# build
+dist/
+build/
+
+# misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+
+# debug
+npm-debug.log*
+pnpm-debug.log*
+
+# vercel
+.vercel
+
+# supabase
+supabase/.temp/
+
+# sanity
+.sanity/

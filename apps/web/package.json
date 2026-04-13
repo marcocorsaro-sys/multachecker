@@ -1,0 +1,38 @@
+{
+  "name": "@multacheck/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^15.3",
+    "react": "^19",
+    "react-dom": "^19",
+    "@multacheck/core": "workspace:*",
+    "@multacheck/db": "workspace:*",
+    "@multacheck/ui": "workspace:*",
+    "@multacheck/sanity-schemas": "workspace:*",
+    "next-sanity": "^9",
+    "sanity": "^3",
+    "@sanity/image-url": "^1",
+    "@sanity/vision": "^3",
+    "@portabletext/react": "^3",
+    "styled-components": "^6",
+    "framer-motion": "^12",
+    "lucide-react": "^0.469"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5.7",
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4",
+    "postcss": "^8"
+  }
+}
