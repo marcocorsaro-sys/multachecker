@@ -24,7 +24,9 @@
     "@portabletext/react": "^3",
     "styled-components": "^6",
     "framer-motion": "^12",
-    "lucide-react": "^0.469"
+    "lucide-react": "^0.469",
+    "@supabase/supabase-js": "^2",
+    "@supabase/ssr": "^0.6"
   },
   "devDependencies": {
     "@types/node": "^22",

@@ -1,0 +1,17 @@
+import { type NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
+
+export async function middleware(request: NextRequest) {
+  return await updateSession(request);
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match app routes that require authentication.
+     * Exclude: magazine, studio, api/stripe/webhook, api/revalidate,
+     * static files, images, favicon.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|studio|magazine|api/stripe/webhook|api/revalidate|feed.xml|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};
