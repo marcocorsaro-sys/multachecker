@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function HomePage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
@@ -9,18 +11,18 @@ export default function HomePage() {
         del verbale e ricevi un&apos;analisi AI in pochi secondi.
       </p>
       <div className="flex gap-4">
-        <a
+        <Link
           href="/upload"
           className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition hover:opacity-90"
         >
           Analizza multa
-        </a>
-        <a
+        </Link>
+        <Link
           href="/magazine"
           className="rounded-lg border border-border px-6 py-3 font-medium transition hover:bg-card"
         >
           Multa Magazine
-        </a>
+        </Link>
       </div>
     </main>
   );
