@@ -24,6 +24,7 @@
     "lucide-react": "^0.469",
     "next": "^15.3",
     "next-sanity": "^9",
+    "pdf-lib": "^1.17.1",
     "react": "^19",
     "react-dom": "^19",
     "sanity": "^3",

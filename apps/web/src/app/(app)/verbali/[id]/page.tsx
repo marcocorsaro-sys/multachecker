@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Clock } from "lucide-react";
 import type { Vizio, Scadenza } from "@multacheck/core";
+import { GeneraRicorsoButton } from "./genera-ricorso-button";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -37,6 +38,13 @@ export default async function VerbaleDetailPage({ params }: Props) {
     .single();
 
   if (error || !verbale) notFound();
+
+  // Carica la pratica collegata (per il bottone "Genera ricorso")
+  const { data: pratica } = await supabase
+    .from("pratiche")
+    .select("id, ricorso_generato_at")
+    .eq("verbale_id", id)
+    .maybeSingle();
 
   const vizi: Vizio[] = Array.isArray(verbale.vizi)
     ? (verbale.vizi as unknown as Vizio[])
@@ -232,23 +240,18 @@ export default async function VerbaleDetailPage({ params }: Props) {
       )}
 
       {/* CTA */}
-      {livello !== "rosso" && (
+      {livello !== "rosso" && pratica && (
         <section className="flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 p-6">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-6 w-6 text-primary" />
-            <div>
-              <p className="font-semibold">Genera il ricorso</p>
-              <p className="text-sm text-muted">
-                MultaCheck prepara un ricorso completo pronto da inviare.
-              </p>
-            </div>
+          <div>
+            <p className="font-semibold">Genera il ricorso</p>
+            <p className="mt-1 text-sm text-muted">
+              MultaCheck prepara un ricorso formale pronto da scaricare in PDF.
+            </p>
           </div>
-          <button
-            disabled
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50"
-          >
-            Prossimamente
-          </button>
+          <GeneraRicorsoButton
+            praticaId={pratica.id}
+            alreadyGenerated={Boolean(pratica.ricorso_generato_at)}
+          />
         </section>
       )}
     </div>
