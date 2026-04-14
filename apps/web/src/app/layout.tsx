@@ -4,15 +4,17 @@ import "./globals.css";
 
 const sans = Instrument_Sans({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-sans-instrument",
   display: "swap",
+  fallback: ["system-ui", "-apple-system", "Segoe UI", "sans-serif"],
 });
 
 const mono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  variable: "--font-mono",
+  variable: "--font-mono-plex",
   display: "swap",
+  fallback: ["ui-monospace", "SF Mono", "Menlo", "monospace"],
 });
 
 export const metadata: Metadata = {

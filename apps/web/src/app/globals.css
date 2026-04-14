@@ -13,6 +13,7 @@
   --color-warning: #eab308;
   --color-danger: #ef4444;
 
-  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: var(--font-sans-instrument, "Instrument Sans"), ui-sans-serif,
+    system-ui, sans-serif;
+  --font-mono: var(--font-mono-plex, "IBM Plex Mono"), ui-monospace, monospace;
 }
