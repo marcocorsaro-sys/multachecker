@@ -43,6 +43,18 @@ export async function POST(_req: Request, { params }: Params) {
       );
     }
 
+    // Payment gate: il ricorso si genera solo se la pratica è stata pagata.
+    if (!pratica.pagato_at) {
+      return NextResponse.json(
+        {
+          error:
+            "Pratica non pagata. Sblocca il ricorso pagando il piano Ricorso PDF.",
+          requires_payment: true,
+        },
+        { status: 402 }
+      );
+    }
+
     const verbale = pratica.verbali;
     if (!verbale) {
       return NextResponse.json(

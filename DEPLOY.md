@@ -25,8 +25,11 @@ Aggiungi queste env var nella sezione "Environment Variables" prima di cliccare 
 Tutte vanno applicate a Production, Preview e Development.
 
 ```
+NEXT_PUBLIC_SITE_URL=https://multacheck.vercel.app
+
 NEXT_PUBLIC_SUPABASE_URL=https://kviwyswvmygxkngfssqz.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<la-tua-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<la-tua-service-role-key>
 
 NEXT_PUBLIC_SANITY_PROJECT_ID=9zy1q6a1
 NEXT_PUBLIC_SANITY_DATASET=production
@@ -35,7 +38,9 @@ SANITY_REVALIDATE_SECRET=<un-segreto-a-tua-scelta>
 
 ANTHROPIC_API_KEY=sk-ant-...
 
-NEXT_PUBLIC_SITE_URL=https://multacheck.vercel.app
+# Stripe — usa sk_test_... in dev, sk_live_... in produzione
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
 > **Nota**: dopo il primo deploy, Vercel ti darà un URL definitivo (tipo `multacheck-xyz.vercel.app`). Aggiorna `NEXT_PUBLIC_SITE_URL` con quel valore e re-deploy.
@@ -59,7 +64,18 @@ Una volta che hai l'URL Vercel, vai su Supabase Dashboard → Authentication →
 
 Senza questo step, magic link e Google OAuth falliranno.
 
-## Step 5 — Configura Sanity Webhook (opzionale)
+## Step 5 — Configura Stripe Webhook
+
+Vai su https://dashboard.stripe.com/webhooks → Add endpoint:
+
+- **Endpoint URL**: `https://<tuo-url>.vercel.app/api/stripe/webhook`
+- **Listen to events**: solo `checkout.session.completed`
+- **Webhook signing secret**: copia il valore (`whsec_...`) e mettilo
+  in `STRIPE_WEBHOOK_SECRET` su Vercel, poi re-deploy.
+
+> Per testing locale: `stripe listen --forward-to localhost:3000/api/stripe/webhook`
+
+## Step 6 — Configura Sanity Webhook (opzionale)
 
 Per l'ISR del Multa Magazine, vai su https://www.sanity.io/manage → Project → API → Webhooks:
 

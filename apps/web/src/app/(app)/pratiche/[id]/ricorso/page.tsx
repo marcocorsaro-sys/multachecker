@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Download, FileText } from "lucide-react";
+import { Suspense } from "react";
+import { AutoGenerateRicorso } from "./auto-generate";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -28,6 +30,13 @@ export default async function RicorsoPage({ params }: Props) {
       >
         <ArrowLeft className="h-4 w-4" /> Torna al verbale
       </Link>
+
+      <Suspense fallback={null}>
+        <AutoGenerateRicorso
+          praticaId={pratica.id}
+          alreadyGenerated={hasRicorso}
+        />
+      </Suspense>
 
       <header className="flex items-start justify-between gap-4">
         <div>

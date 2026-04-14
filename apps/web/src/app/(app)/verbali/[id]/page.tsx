@@ -42,7 +42,7 @@ export default async function VerbaleDetailPage({ params }: Props) {
   // Carica la pratica collegata (per il bottone "Genera ricorso")
   const { data: pratica } = await supabase
     .from("pratiche")
-    .select("id, ricorso_generato_at")
+    .select("id, ricorso_generato_at, pagato_at")
     .eq("verbale_id", id)
     .maybeSingle();
 
@@ -251,6 +251,7 @@ export default async function VerbaleDetailPage({ params }: Props) {
           <GeneraRicorsoButton
             praticaId={pratica.id}
             alreadyGenerated={Boolean(pratica.ricorso_generato_at)}
+            paid={Boolean(pratica.pagato_at)}
           />
         </section>
       )}
