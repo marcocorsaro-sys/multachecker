@@ -3,10 +3,13 @@ import type { QueryParams } from "next-sanity";
 
 /**
  * Wrapper around client.fetch with ISR revalidation defaults.
- * Returns the fallback value when Sanity is not configured.
+ *
+ * Resilience: returns the fallback value when Sanity is not configured
+ * OR when the fetch fails for any reason (network, auth, missing
+ * dataset). This keeps the build green even when Sanity isn't yet
+ * provisioned — pages will refetch on the next ISR cycle.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function sanityFetch<T = any>({
+export async function sanityFetch<T = unknown>({
   query,
   params = {},
   tags = [],
@@ -23,10 +26,17 @@ export async function sanityFetch<T = any>({
     return fallback as T;
   }
 
-  return client.fetch<T>(query, params, {
-    next: {
-      revalidate,
-      tags,
-    },
-  });
+  try {
+    return await client.fetch<T>(query, params, {
+      next: {
+        revalidate,
+        tags,
+      },
+    });
+  } catch (err) {
+    console.warn(
+      `[sanityFetch] query failed, returning fallback: ${(err as Error).message}`
+    );
+    return fallback as T;
+  }
 }

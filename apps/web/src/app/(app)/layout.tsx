@@ -29,6 +29,12 @@ export default async function AppLayout({
             >
               Le mie pratiche
             </Link>
+            <Link
+              href="/profilo"
+              className="text-sm text-muted hover:text-foreground transition"
+            >
+              Profilo
+            </Link>
             <span className="text-xs text-muted truncate max-w-[150px]">
               {user.email}
             </span>

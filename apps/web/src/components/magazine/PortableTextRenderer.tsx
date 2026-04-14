@@ -159,8 +159,8 @@ function extractText(node: React.ReactNode): string {
   if (typeof node === "string") return node;
   if (Array.isArray(node)) return node.map(extractText).join("");
   if (node && typeof node === "object" && "props" in node) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return extractText((node as any).props.children);
+    const props = (node as { props?: { children?: React.ReactNode } }).props;
+    return extractText(props?.children);
   }
   return "";
 }
@@ -168,8 +168,10 @@ function extractText(node: React.ReactNode): string {
 export function PortableTextRenderer({ value }: { value: unknown[] }) {
   return (
     <div className="prose-custom">
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <PortableText value={value as any} components={components} />
+      <PortableText
+        value={value as Parameters<typeof PortableText>[0]["value"]}
+        components={components}
+      />
     </div>
   );
 }
