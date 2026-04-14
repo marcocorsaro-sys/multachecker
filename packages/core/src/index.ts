@@ -1,3 +1,3 @@
 export * from "./types";
 export * from "./scadenze";
-export * from "./contestability";
+export * from "./analisi";

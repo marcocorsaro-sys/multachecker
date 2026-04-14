@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseVerbaleWithClaude } from "@/lib/ai/claude";
-import { valutaContestabilita } from "@multacheck/core";
+import { analizzaVerbale } from "@multacheck/core";
 import type { TablesInsert } from "@multacheck/db";
 
 // Claude parsing può richiedere qualche secondo → estendiamo la durata
@@ -104,8 +104,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5. Valutazione contestabilità
-    const contest = valutaContestabilita(parsed.data);
+    // 5. Valutazione contestabilità tramite l'engine deterministico
+    const contest = analizzaVerbale(parsed.data);
 
     // 6. Insert nel DB — verbali
     const verbaleInsert: TablesInsert<"verbali"> = {

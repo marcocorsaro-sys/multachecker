@@ -9,8 +9,7 @@ import type { QueryParams } from "next-sanity";
  * dataset). This keeps the build green even when Sanity isn't yet
  * provisioned — pages will refetch on the next ISR cycle.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function sanityFetch<T = any>({
+export async function sanityFetch<T = unknown>({
   query,
   params = {},
   tags = [],

@@ -19,7 +19,7 @@
     "@sanity/image-url": "^1",
     "@sanity/vision": "^3",
     "@supabase/ssr": "^0.10.2",
-    "@supabase/supabase-js": "^2",
+    "@supabase/supabase-js": "^2.102.1",
     "framer-motion": "^12",
     "lucide-react": "^0.469",
     "next": "^15.3",
@@ -36,6 +36,8 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^15.3",
     "postcss": "^8",
     "tailwindcss": "^4",
     "typescript": "^5.7"
