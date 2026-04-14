@@ -5,8 +5,7 @@ import type { QueryParams } from "next-sanity";
  * Wrapper around client.fetch with ISR revalidation defaults.
  * Returns the fallback value when Sanity is not configured.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function sanityFetch<T = any>({
+export async function sanityFetch<T = unknown>({
   query,
   params = {},
   tags = [],

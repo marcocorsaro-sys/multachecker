@@ -4,8 +4,7 @@
  * once the Sanity project is created.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SanityImage = any;
+type SanityImage = unknown;
 
 export type SanitySlug = { current: string };
 
