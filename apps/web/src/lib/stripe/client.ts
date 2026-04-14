@@ -1,16 +1,34 @@
 import Stripe from "stripe";
 
 /**
- * Istanza globale del client Stripe (server-side).
- * La chiave segreta viene letta da env — STRIPE_SECRET_KEY.
+ * Lazy-initialized Stripe client.
  *
- * Pinning della API version: importante per evitare breaking change
- * silenziosi quando Stripe rilascia nuove versioni.
+ * IMPORTANTE: il costruttore di Stripe valida la API key e fa throw
+ * se è vuota o malformata. Se istanziamo a module-level, l'errore
+ * viene lanciato durante "collect page data" di Next.js build,
+ * facendo fallire la build su Vercel quando le env var non sono
+ * ancora state aggiunte. La lazy init garantisce che la build passi
+ * sempre — l'errore arriverà solo a runtime, sulla prima chiamata.
  */
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2026-03-25.dahlia",
-  typescript: true,
-});
+let _stripe: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (_stripe) return _stripe;
+
+  const apiKey = process.env.STRIPE_SECRET_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "STRIPE_SECRET_KEY non è configurata. Aggiungila nelle env var del progetto."
+    );
+  }
+
+  _stripe = new Stripe(apiKey, {
+    apiVersion: "2026-03-25.dahlia",
+    typescript: true,
+  });
+
+  return _stripe;
+}
 
 /**
  * Prezzo del piano "Ricorso PDF" in centesimi (€19.00).
