@@ -8,7 +8,7 @@ import { renderRicorsoPdf } from "@/lib/pdf/ricorso-pdf";
 import type { VerbaleData, Vizio } from "@multacheck/core";
 import type { TablesUpdate } from "@multacheck/db";
 
-export const maxDuration = 90;
+export const maxDuration = 60;
 export const runtime = "nodejs";
 
 const BUCKET = "verbali";
