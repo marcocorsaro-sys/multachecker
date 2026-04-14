@@ -36,7 +36,9 @@ export async function updateSession(request: NextRequest) {
   const isAppRoute =
     pathname.startsWith("/upload") ||
     pathname.startsWith("/analisi") ||
-    pathname.startsWith("/pratiche");
+    pathname.startsWith("/pratiche") ||
+    pathname.startsWith("/verbali") ||
+    pathname.startsWith("/profilo");
 
   if (isAppRoute && !user) {
     const url = request.nextUrl.clone();
